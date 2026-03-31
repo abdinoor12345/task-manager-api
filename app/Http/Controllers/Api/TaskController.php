@@ -53,19 +53,23 @@ class TaskController extends Controller
     return response()->json($task);
 }
 
-public function destroy(Task $task)
+ public function destroy(Task $task)
 {
-    // Rule: Only done tasks can be deleted
-    // Otherwise, return 403 Forbidden [cite: 65]
-    $this->authorize('delete', $task);
+    if ($task->status !== 'done') {
+        return response()->json([
+            'message' => 'Only completed tasks can be deleted.'
+        ], 403);
+    }
 
     $task->delete();
 
-    return response()->json(['message' => 'Task deleted successfully.']);
+    return response()->json([
+        'message' => 'Task deleted successfully.'
+    ]);
 }
 public function report(Request $request)
 {
-    $request->validate(['date' => 'required|date']);  
+    $request->validate(['date' => 'required|date']);
     $date = $request->date;
 
     $tasks = Task::whereDate('due_date', $date)->get();
@@ -77,7 +81,7 @@ public function report(Request $request)
     ];
 
     foreach ($tasks as $task) {
-        $summary[$task->priority][$task->status]++; // [cite: 68, 72]
+        $summary[$task->priority][$task->status]++;
     }
 
     return response()->json([
